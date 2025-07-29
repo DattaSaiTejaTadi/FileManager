@@ -14,6 +14,11 @@ func (H *handler) CreateFolder(ctx fiber.Ctx) error {
 		ctx.Status(statuscode).JSON(errresp)
 		return nil
 	}
+	if folderReq.Name == "" {
+		statuscode, errresp := httperrors.BodyValidationError().ErrorResponse()
+		ctx.Status(statuscode).JSON(errresp)
+		return nil
+	}
 	folder, err := H.service.CreateFolder(ctx, folderReq)
 	if err != nil {
 		statuscode, errresp := err.ErrorResponse()

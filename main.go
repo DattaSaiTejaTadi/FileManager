@@ -38,6 +38,7 @@ func main() {
 		log.Println("Issue in initializing s3 client", err.Error())
 	}
 	db := initializeDB(configs, "")
+	log.Println(configs)
 	if db == nil {
 		log.Fatal("DB connection failed")
 	}

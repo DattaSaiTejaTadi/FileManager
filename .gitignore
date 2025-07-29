@@ -1,0 +1,39 @@
+.env
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Output of go build
+/build/
+/bin/
+/dist/
+
+# Go modules and dependency caches
+/vendor/
+go.sum
+
+# Editor files
+*.swp
+*.swo
+*.idea/
+.vscode/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Config files
+configs/.env
+
+# Test results or coverage files
+coverage.out
+
+# Logs and temporary files
+*.log
+*.tmp
+*.cache

@@ -29,7 +29,7 @@ Thumbs.db
 
 # Config files
 configs/.env
-
+.env
 # Test results or coverage files
 coverage.out
 

@@ -1,6 +1,6 @@
 CREATE TABLE folders (
     id UUID PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL unique,
     parent_id UUID REFERENCES folders(id) ON DELETE CASCADE,
     owner_id UUID NOT NULL,
     full_path TEXT NOT NULL, -- e.g. "Root/Projects/Design"

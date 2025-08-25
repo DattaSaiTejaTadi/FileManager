@@ -2,10 +2,14 @@ package main
 
 import (
 	"database/sql"
-	"fm/handler"
-	"fm/models"
-	"fm/service"
+	handlerFiles "fm/handler/files"
+	handlerFolders "fm/handler/folders"
+	svcFiles "fm/service/files"
+	svcFolders "fm/service/folders"
 	"fm/store"
+	"fm/store/buckets"
+	"fm/store/files"
+	"fm/store/folders"
 	"fmt"
 	"log"
 	"strconv"
@@ -23,52 +27,46 @@ import (
 
 func main() {
 	configs := configManager.New()
-	s3config := models.S3Config{
-		Endpoint:  configs.GetConfig("S3_ENDPOINT"),
-		Region:    "auto",
-		AccessKey: configs.GetConfig("S3_ACCESS_KEY"),
-		SecretKey: configs.GetConfig("S3_SECRET_KEY"),
-		Bucket:    configs.GetConfig("S3_BUCKET"),
-	}
-	S3client, err := store.NewS3Client(s3config)
-	if S3client == nil {
-		log.Fatal(" S3 coocnetion failed")
-	}
-	if err != nil {
-		log.Println("Issue in initializing s3 client", err.Error())
-	}
+
 	db := initializeDB(configs, "")
 	log.Println(configs)
 	if db == nil {
 		log.Fatal("DB connection failed")
 	}
 	runMigrations(configs)
-
-	storeDB := store.New(db)
-	serviceLayer := service.New(storeDB, *S3client)
-	handlerLayer := handler.New(serviceLayer)
 	r := fiber.New()
-	r.Get("/getobjects", func(ctx fiber.Ctx) error {
-		fileinfo, err := S3client.ListFolder("")
-		if err != nil {
-			ctx.Status(400).JSON(map[string]any{
-				"Code":    400,
-				"Message": "some issue in fetching s3 objects",
-			})
-			return nil
-		}
-		ctx.Status(200).JSON(
-			map[string]any{
-				"Code":    200,
-				"Message": "Successfully fetched objects",
-				"Data":    fileinfo,
-			})
-		return nil
-	})
-	r.Post("/createFolder", handlerLayer.CreateFolder)
-	r.Get("/getFolder", handlerLayer.GetAllFolders)
-	r.Listen(":" + configs.GetConfig("PORT"))
+	bucket := buckets.New(
+		configs.GetConfig("S3_ENDPOINT"),
+		configs.GetConfig("S3_BUCKET"),
+		configs.GetConfig("S3_TOKEN"),
+	)
+	initializeFolderRoutes(r, db, bucket)
+	initializeFileRoutes(r, db, bucket)
+
+	r.Listen(":" + configs.GetConfig("HTTP_PORT"))
 }
+func initializeFolderRoutes(app *fiber.App, db *sql.DB, bucket store.Bucket) {
+	folderStore := folders.New(db)
+	foldersvc := svcFolders.New(folderStore, bucket)
+	folderHanlde := handlerFolders.New(foldersvc)
+
+	app.Post("/folder", folderHanlde.Create)
+	app.Get("/folder", folderHanlde.GetALL)
+	app.Get("/folder/:id", folderHanlde.GetById)
+	app.Get("/folder/:id/subfolders", folderHanlde.GetSubFolders)
+}
+
+func initializeFileRoutes(app *fiber.App, db *sql.DB, bucket store.Bucket) {
+	fileStore := files.New(db)
+	folderStore := folders.New(db)
+	filesvc := svcFiles.New(fileStore, folderStore, bucket)
+	fileHandler := handlerFiles.New(filesvc)
+
+	app.Post("/file", fileHandler.Create)
+	app.Get("/file/:id", fileHandler.GetById)
+	app.Get("/folder/:folderId/files", fileHandler.GetFiles)
+}
+
 func runMigrations(configs *configManager.Config) {
 	dbConfig := intializeDBConfigs(configs, "")
 	connStr := generateConnectionString(dbConfig)

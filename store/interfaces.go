@@ -8,8 +8,20 @@ import (
 	"github.com/syntaxLabz/errors/pkg/httperrors"
 )
 
-type Store interface {
-	GetFolderDetails(ctx fiber.Ctx, folderId uuid.UUID) (models.Folder, *httperrors.Error)
-	CreateFolder(ctx fiber.Ctx, folder models.Folder) (models.Folder, *httperrors.Error)
-	GetAllFolders(ctx fiber.Ctx) ([]models.Folder, *httperrors.Error)
+type Folder interface {
+	Create(ctx fiber.Ctx, folder *models.Folder) (*models.Folder, *httperrors.Error)
+	GetALL(ctx fiber.Ctx) ([]models.Folder, *httperrors.Error)
+	GetById(ctx fiber.Ctx, id *uuid.UUID) (*models.Folder, *httperrors.Error)
+	GetSubFolders(ctx fiber.Ctx, id *uuid.UUID) ([]models.Folder, *httperrors.Error)
+}
+
+type File interface {
+	Create(ctx fiber.Ctx, file *models.File) (*models.File, *httperrors.Error)
+	GetFiles(ctx fiber.Ctx, parentFolderId uuid.UUID) ([]*models.File, *httperrors.Error)
+	GetById(ctx fiber.Ctx, id uuid.UUID) (*models.File, *httperrors.Error)
+}
+
+type Bucket interface {
+	CreateFolder(fullPath string) (*models.CreateObjectResponse, *httperrors.Error)
+	GeneratePresignedUploadURL(fullPath string) (*models.UploadSignedURLResponse, *httperrors.Error)
 }
